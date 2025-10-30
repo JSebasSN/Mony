@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,16 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Animated,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { Stack } from 'expo-router';
-import { TrendingUp, TrendingDown, Wallet, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, Wallet, ChevronLeft, ChevronRight, Calendar } from 'lucide-react-native';
 import { trpc } from '@/lib/trpc';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
 
 const MONTHS = [
   'Enero',
@@ -32,6 +38,23 @@ export default function BalanceScreen() {
   const now = new Date();
   const [year, setYear] = useState<number>(now.getFullYear());
   const [month, setMonth] = useState<number>(now.getMonth() + 1);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, slideAnim]);
 
   const movementsQuery = trpc.movements.getAll.useQuery(
     { groupId: currentUser?.groupId || '' },
@@ -110,10 +133,13 @@ export default function BalanceScreen() {
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ title: 'Balance' }} />
-        <View style={styles.noAccessContainer}>
-          <Text style={styles.noAccessText}>Acceso restringido</Text>
+        <LinearGradient colors={['#ffffff', '#f8fafc']} style={styles.noAccessGradient}>
+          <View style={styles.noAccessIconContainer}>
+            <Wallet size={56} color="#cbd5e1" strokeWidth={2} />
+          </View>
+          <Text style={styles.noAccessText}>Acceso Restringido</Text>
           <Text style={styles.noAccessSubtext}>Solo administradores pueden ver el balance</Text>
-        </View>
+        </LinearGradient>
       </View>
     );
   }
@@ -121,40 +147,65 @@ export default function BalanceScreen() {
   if (movementsQuery.isLoading || usersQuery.isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <Stack.Screen options={{ title: 'Balance Mensual' }} />
-        <ActivityIndicator size="large" color="#007AFF" />
+        <Stack.Screen options={{ 
+          title: 'Balance Mensual',
+          headerStyle: { backgroundColor: '#ffffff' },
+          headerTitleStyle: { fontWeight: '700' as const, fontSize: 20 },
+        }} />
+        <LinearGradient colors={['#ffffff', '#f8fafc']} style={styles.loadingGradient}>
+          <ActivityIndicator size="large" color="#2563eb" />
+          <Text style={styles.loadingText}>Cargando balance...</Text>
+        </LinearGradient>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Balance Mensual' }} />
+      <Stack.Screen options={{ 
+        title: 'Balance Mensual',
+        headerStyle: { backgroundColor: '#ffffff' },
+        headerTitleStyle: { fontWeight: '700' as const, fontSize: 20 },
+      }} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handlePrevMonth} style={styles.monthButton}>
-            <ChevronLeft size={24} color="#007AFF" />
-          </TouchableOpacity>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          <View style={styles.monthSelector}>
+            <TouchableOpacity onPress={handlePrevMonth} style={styles.monthButton} activeOpacity={0.7}>
+              <ChevronLeft size={24} color="#2563eb" strokeWidth={2.5} />
+            </TouchableOpacity>
 
-          <View style={styles.monthContainer}>
-            <Text style={styles.monthText}>{MONTHS[month - 1]}</Text>
-            <Text style={styles.yearText}>{year}</Text>
+            <View style={styles.monthContainer}>
+              <View style={styles.calendarIconContainer}>
+                <Calendar size={20} color="#2563eb" />
+              </View>
+              <Text style={styles.monthText}>{MONTHS[month - 1]}</Text>
+              <Text style={styles.yearText}>{year}</Text>
+            </View>
+
+            <TouchableOpacity onPress={handleNextMonth} style={styles.monthButton} activeOpacity={0.7}>
+              <ChevronRight size={24} color="#2563eb" strokeWidth={2.5} />
+            </TouchableOpacity>
           </View>
+        </Animated.View>
 
-          <TouchableOpacity onPress={handleNextMonth} style={styles.monthButton}>
-            <ChevronRight size={24} color="#007AFF" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.summaryCard}>
+        <Animated.View style={[{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          <LinearGradient
+            colors={['#2563eb', '#1d4ed8']}
+            style={styles.summaryCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
-              <View style={[styles.iconCircle, styles.incomeCircle]}>
+              <View style={[styles.iconCircle, styles.whiteCircle]}>
                 <TrendingUp size={20} color="#10B981" />
               </View>
               <Text style={styles.summaryLabel}>Ingresos</Text>
-              <Text style={[styles.summaryValue, styles.incomeValue]}>
+              <Text style={[styles.summaryValue, styles.whiteText]}>
                 ${balance.totalIncome.toLocaleString()}
               </Text>
             </View>
@@ -162,33 +213,29 @@ export default function BalanceScreen() {
             <View style={styles.summaryDivider} />
 
             <View style={styles.summaryItem}>
-              <View style={[styles.iconCircle, styles.expenseCircle]}>
+              <View style={[styles.iconCircle, styles.whiteCircle]}>
                 <TrendingDown size={20} color="#EF4444" />
               </View>
               <Text style={styles.summaryLabel}>Gastos</Text>
-              <Text style={[styles.summaryValue, styles.expenseValue]}>
+              <Text style={[styles.summaryValue, styles.whiteText]}>
                 ${balance.totalExpenses.toLocaleString()}
               </Text>
             </View>
           </View>
 
           <View style={styles.balanceContainer}>
-            <View style={[styles.iconCircle, styles.balanceCircle]}>
+            <View style={[styles.iconCircle, styles.whiteCircle]}>
               <Wallet size={20} color="#007AFF" />
             </View>
             <Text style={styles.balanceLabel}>Balance Neto</Text>
-            <Text
-              style={[
-                styles.balanceValue,
-                balance.balance >= 0 ? styles.positiveBalance : styles.negativeBalance,
-              ]}
-            >
+            <Text style={[styles.balanceValue, styles.whiteText]}>
               ${balance.balance.toLocaleString()}
             </Text>
           </View>
-        </View>
+          </LinearGradient>
+        </Animated.View>
 
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
           <Text style={styles.sectionTitle}>Por Usuario</Text>
           {balance.byUser.map((userBalance) => (
             <View key={userBalance.userId} style={styles.userCard}>
@@ -223,7 +270,7 @@ export default function BalanceScreen() {
               </View>
             </View>
           ))}
-        </View>
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -236,66 +283,114 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
+  },
+  loadingGradient: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F7',
   },
-  noAccessContainer: {
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#64748b',
+    fontWeight: '500' as const,
+  },
+  noAccessGradient: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: 32,
+  },
+  noAccessIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   noAccessText: {
-    fontSize: 20,
-    fontWeight: '600' as const,
-    color: '#1C1C1E',
-    marginBottom: 8,
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: '#0f172a',
+    marginBottom: 12,
   },
   noAccessSubtext: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: '#64748b',
     textAlign: 'center',
+    maxWidth: 300,
   },
   scrollContent: {
-    padding: 16,
+    padding: Platform.OS === 'web' ? Math.min(width * 0.05, 24) : 16,
+    paddingBottom: 100,
   },
   header: {
+    marginBottom: 24,
+  },
+  monthSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  monthButton: {
-    padding: 8,
-    borderRadius: 10,
-    backgroundColor: '#f1f5f9',
-  },
-  monthContainer: {
-    alignItems: 'center',
-  },
-  monthText: {
-    fontSize: 24,
-    fontWeight: '700' as const,
-    color: '#1C1C1E',
-  },
-  yearText: {
-    fontSize: 16,
-    color: '#8E8E93',
-    marginTop: 2,
-  },
-  summaryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#ffffff',
     borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
     borderWidth: 1,
     borderColor: '#f1f5f9',
+  },
+  monthButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#dbeafe',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  monthContainer: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  calendarIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#dbeafe',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  monthText: {
+    fontSize: 26,
+    fontWeight: '800' as const,
+    color: '#0f172a',
+    letterSpacing: -0.5,
+    marginBottom: 2,
+  },
+  yearText: {
+    fontSize: 16,
+    color: '#64748b',
+    fontWeight: '500' as const,
+  },
+  summaryCard: {
+    borderRadius: 24,
+    padding: 28,
+    marginBottom: 28,
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -307,34 +402,38 @@ const styles = StyleSheet.create({
   },
   summaryDivider: {
     width: 1,
-    backgroundColor: '#E5E5EA',
-    marginHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginHorizontal: 20,
   },
   iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  incomeCircle: {
-    backgroundColor: '#D1FAE5',
-  },
-  expenseCircle: {
-    backgroundColor: '#FEE2E2',
-  },
-  balanceCircle: {
-    backgroundColor: '#DBEAFE',
+  whiteCircle: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
   },
   summaryLabel: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginBottom: 4,
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 6,
+    fontWeight: '500' as const,
   },
   summaryValue: {
-    fontSize: 22,
-    fontWeight: '700' as const,
+    fontSize: 24,
+    fontWeight: '800' as const,
+    letterSpacing: -0.5,
+  },
+  whiteText: {
+    color: '#ffffff',
   },
   incomeValue: {
     color: '#10B981',
@@ -344,18 +443,21 @@ const styles = StyleSheet.create({
   },
   balanceContainer: {
     alignItems: 'center',
-    paddingTop: 20,
+    paddingTop: 24,
+    marginTop: 4,
     borderTopWidth: 1,
-    borderTopColor: '#F5F5F7',
+    borderTopColor: 'rgba(255, 255, 255, 0.3)',
   },
   balanceLabel: {
-    fontSize: 16,
-    color: '#8E8E93',
-    marginBottom: 4,
+    fontSize: 17,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 8,
+    fontWeight: '500' as const,
   },
   balanceValue: {
-    fontSize: 32,
-    fontWeight: '700' as const,
+    fontSize: 36,
+    fontWeight: '800' as const,
+    letterSpacing: -1,
   },
   positiveBalance: {
     color: '#10B981',
@@ -367,29 +469,31 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700' as const,
-    color: '#1C1C1E',
-    marginBottom: 12,
+    fontSize: 22,
+    fontWeight: '800' as const,
+    color: '#0f172a',
+    marginBottom: 16,
+    letterSpacing: -0.5,
   },
   userCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 14,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
     borderWidth: 1,
     borderColor: '#f1f5f9',
   },
   userName: {
-    fontSize: 18,
-    fontWeight: '600' as const,
-    color: '#1C1C1E',
-    marginBottom: 12,
+    fontSize: 19,
+    fontWeight: '700' as const,
+    color: '#0f172a',
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
   userStats: {
     flexDirection: 'row',
@@ -399,12 +503,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userStatLabel: {
-    fontSize: 13,
-    color: '#8E8E93',
-    marginBottom: 4,
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 5,
+    fontWeight: '500' as const,
   },
   userStatValue: {
-    fontSize: 16,
-    fontWeight: '600' as const,
+    fontSize: 17,
+    fontWeight: '700' as const,
+    letterSpacing: -0.3,
   },
 });
