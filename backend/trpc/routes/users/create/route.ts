@@ -1,5 +1,5 @@
 import { publicProcedure } from '@/backend/trpc/create-context';
-import { dataStore } from '@/backend/data/store';
+import { firebaseStore } from '@/backend/data/firebase-store';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 
@@ -17,7 +17,7 @@ export const createUserProcedure = publicProcedure
     console.log('[Backend] Creating user:', input.email);
     
     const normalizedEmail = input.email.trim().toLowerCase();
-    const existingUser = dataStore.getUserByEmail(normalizedEmail);
+    const existingUser = await firebaseStore.getUserByEmail(normalizedEmail);
 
     if (existingUser) {
       throw new TRPCError({
@@ -27,7 +27,7 @@ export const createUserProcedure = publicProcedure
     }
 
     try {
-      const newUser = dataStore.createUser({
+      const newUser = await firebaseStore.createUser({
         name: input.name.trim(),
         email: normalizedEmail,
         password: input.password,

@@ -1,5 +1,5 @@
 import { publicProcedure } from '@/backend/trpc/create-context';
-import { dataStore } from '@/backend/data/store';
+import { firebaseStore } from '@/backend/data/firebase-store';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 
@@ -13,7 +13,7 @@ export const resetPasswordProcedure = publicProcedure
     })
   )
   .mutation(async ({ input }) => {
-    const admin = dataStore.getUserByEmail(input.adminEmail);
+    const admin = await firebaseStore.getUserByEmail(input.adminEmail);
 
     if (!admin) {
       throw new TRPCError({
@@ -36,7 +36,7 @@ export const resetPasswordProcedure = publicProcedure
       });
     }
 
-    const user = dataStore.getUserByEmail(input.email);
+    const user = await firebaseStore.getUserByEmail(input.email);
 
     if (!user) {
       throw new TRPCError({
@@ -52,7 +52,7 @@ export const resetPasswordProcedure = publicProcedure
       });
     }
 
-    const updatedUser = dataStore.updateUser(user.id, {
+    const updatedUser = await firebaseStore.updateUser(user.id, {
       password: input.newPassword,
     });
 

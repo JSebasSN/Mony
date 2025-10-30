@@ -1,5 +1,5 @@
 import { publicProcedure } from '@/backend/trpc/create-context';
-import { dataStore } from '@/backend/data/store';
+import { firebaseStore } from '@/backend/data/firebase-store';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { AuthResponse } from '@/types';
@@ -23,7 +23,7 @@ export const loginProcedure = publicProcedure
     }
     
     const normalizedEmail = input.email.trim().toLowerCase();
-    const user = dataStore.getUserByEmail(normalizedEmail);
+    const user = await firebaseStore.getUserByEmail(normalizedEmail);
 
     if (!user) {
       console.log('[Backend] User not found:', normalizedEmail);
@@ -41,7 +41,7 @@ export const loginProcedure = publicProcedure
       });
     }
 
-    const group = dataStore.getGroupById(user.groupId);
+    const group = await firebaseStore.getGroupById(user.groupId);
     
     if (!group) {
       console.error('[Backend] Group not found for user:', user.groupId);

@@ -1,5 +1,6 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 import { Platform } from 'react-native';
 
 const firebaseConfig = {
@@ -12,19 +13,11 @@ const firebaseConfig = {
   measurementId: "G-LYDER4TR26"
 };
 
-let app;
-try {
-  app = initializeApp(firebaseConfig);
-  console.log('[Firebase] Firebase initialized successfully');
-} catch (error: any) {
-  if (error.code === 'app/duplicate-app') {
-    console.log('[Firebase] Firebase app already initialized');
-  } else {
-    console.error('[Firebase] Firebase initialization error:', error);
-  }
-}
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+console.log('[Firebase] Firebase initialized successfully');
 
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 if (Platform.OS === 'web') {
   console.log('[Firebase] Running on web platform');
@@ -32,4 +25,4 @@ if (Platform.OS === 'web') {
   console.log('[Firebase] Running on native platform');
 }
 
-export { auth };
+export { auth, db };

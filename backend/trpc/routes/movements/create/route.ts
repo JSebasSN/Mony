@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { publicProcedure } from "@/backend/trpc/create-context";
-import { dataStore } from "@/backend/data/store";
+import { firebaseStore } from "@/backend/data/firebase-store";
 
 export const createMovementProcedure = publicProcedure
   .input(
@@ -13,7 +13,7 @@ export const createMovementProcedure = publicProcedure
       amount: z.number(),
     })
   )
-  .mutation(({ input }) => {
-    const movement = dataStore.createMovement(input);
+  .mutation(async ({ input }) => {
+    const movement = await firebaseStore.createMovement(input);
     return { movement };
   });

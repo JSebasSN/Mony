@@ -1,5 +1,5 @@
 import { publicProcedure } from '@/backend/trpc/create-context';
-import { dataStore } from '@/backend/data/store';
+import { firebaseStore } from '@/backend/data/firebase-store';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { AuthResponse } from '@/types';
@@ -27,7 +27,7 @@ export const registerAdminProcedure = publicProcedure
       });
     }
     
-    const existingUser = dataStore.getUserByEmail(normalizedEmail);
+    const existingUser = await firebaseStore.getUserByEmail(normalizedEmail);
 
     if (existingUser) {
       console.log('[Backend] Email already exists:', normalizedEmail);
@@ -38,14 +38,14 @@ export const registerAdminProcedure = publicProcedure
     }
 
     try {
-      const newGroup = dataStore.createGroup({
+      const newGroup = await firebaseStore.createGroup({
         name: input.companyName.trim(),
         createdAt: new Date().toISOString(),
       });
       
       console.log('[Backend] Group created:', newGroup.id, newGroup.name);
 
-      const newUser = dataStore.createUser({
+      const newUser = await firebaseStore.createUser({
         name: input.name.trim(),
         email: normalizedEmail,
         password: input.password,

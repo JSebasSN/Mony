@@ -1,12 +1,12 @@
 import { publicProcedure } from '@/backend/trpc/create-context';
-import { dataStore } from '@/backend/data/store';
+import { firebaseStore } from '@/backend/data/firebase-store';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 
 export const deleteUserProcedure = publicProcedure
   .input(z.object({ userId: z.string() }))
   .mutation(async ({ input }) => {
-    const success = dataStore.deleteUser(input.userId);
+    const success = await firebaseStore.deleteUser(input.userId);
 
     if (!success) {
       throw new TRPCError({

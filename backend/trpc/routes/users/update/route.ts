@@ -1,5 +1,5 @@
 import { publicProcedure } from '@/backend/trpc/create-context';
-import { dataStore } from '@/backend/data/store';
+import { firebaseStore } from '@/backend/data/firebase-store';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { UserWithoutPassword } from '@/types';
@@ -21,7 +21,7 @@ export const updateUserProcedure = publicProcedure
 
     if (updates.email) {
       const normalizedEmail = updates.email.trim().toLowerCase();
-      const existingUser = dataStore.getUserByEmail(normalizedEmail);
+      const existingUser = await firebaseStore.getUserByEmail(normalizedEmail);
       if (existingUser && existingUser.id !== userId) {
         console.log('[Backend] Email already in use:', normalizedEmail);
         throw new TRPCError({
@@ -36,7 +36,7 @@ export const updateUserProcedure = publicProcedure
       updates.name = updates.name.trim();
     }
 
-    const updatedUser = dataStore.updateUser(userId, updates);
+    const updatedUser = await firebaseStore.updateUser(userId, updates);
 
     if (!updatedUser) {
       console.error('[Backend] User not found:', userId);

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { publicProcedure } from "@/backend/trpc/create-context";
-import { dataStore } from "@/backend/data/store";
+import { firebaseStore } from "@/backend/data/firebase-store";
 import { TRPCError } from "@trpc/server";
 
 export const updateMovementProcedure = publicProcedure
@@ -15,8 +15,8 @@ export const updateMovementProcedure = publicProcedure
       }),
     })
   )
-  .mutation(({ input }) => {
-    const movement = dataStore.updateMovement(input.id, input.updates);
+  .mutation(async ({ input }) => {
+    const movement = await firebaseStore.updateMovement(input.id, input.updates);
     
     if (!movement) {
       throw new TRPCError({
