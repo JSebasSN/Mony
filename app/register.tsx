@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCustomAlert } from '@/components/CustomAlert';
 import {
   View,
@@ -11,10 +11,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
-import { Building2, Mail, Lock, User } from 'lucide-react-native';
+import { Building2, Mail, Lock, User, Sparkles } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -28,12 +33,30 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [companyName, setCompanyName] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     if (isAuthenticated) {
       router.replace('/(tabs)/movements');
     }
   }, [isAuthenticated, router]);
+  
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, slideAnim]);
 
   const handleRegister = async () => {
     if (isLoading) {
@@ -115,111 +138,159 @@ export default function RegisterScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 40 }]}
-        keyboardShouldPersistTaps="handled"
+      <LinearGradient
+        colors={['#ffffff', '#f8fafc']}
+        style={styles.gradient}
       >
-        <View style={styles.header}>
-          <View style={styles.iconContainer}>
-            <Building2 size={48} color="#2d4a7c" strokeWidth={2} />
-          </View>
-          <Text style={styles.title}>Crear Cuenta</Text>
-          <Text style={styles.subtitle}>Regístrate con Firebase</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Building2 size={20} color="#8E8E93" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Nombre de la empresa"
-              value={companyName}
-              onChangeText={setCompanyName}
-              autoCorrect={false}
-              editable={!isLoading}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <User size={20} color="#8E8E93" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Tu nombre completo"
-              value={name}
-              onChangeText={setName}
-              autoCorrect={false}
-              editable={!isLoading}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Mail size={20} color="#8E8E93" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Correo electrónico"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!isLoading}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Lock size={20} color="#8E8E93" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Contraseña (min. 6 caracteres)"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              editable={!isLoading}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Lock size={20} color="#8E8E93" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Confirmar contraseña"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              editable={!isLoading}
-            />
-          </View>
-
-          <View style={styles.infoBox}>
-            <Text style={styles.infoText}>
-              Tu cuenta será creada en Firebase y tendrás acceso completo a la aplicación.
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.registerButton, isLoading && styles.registerButtonDisabled]}
-            onPress={handleRegister}
-            disabled={isLoading}
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 40 }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View 
+            style={[styles.header, {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }]}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.registerButtonText}>Crear Cuenta</Text>
-            )}
-          </TouchableOpacity>
+            <View style={styles.iconContainer}>
+              <View style={styles.iconBackground}>
+                <Building2 size={52} color="#2563eb" strokeWidth={2.5} />
+              </View>
+              <View style={styles.sparkleIcon}>
+                <Sparkles size={18} color="#fbbf24" />
+              </View>
+            </View>
+            <Text style={styles.title}>Crea tu Cuenta</Text>
+            <Text style={styles.subtitle}>Comienza a gestionar tus finanzas</Text>
+          </Animated.View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>¿Ya tienes cuenta?</Text>
-            <Link href="/login" asChild>
-              <TouchableOpacity disabled={isLoading}>
-                <Text style={styles.loginLink}>Iniciar sesión</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
-        </View>
-      </ScrollView>
+          <Animated.View 
+            style={[styles.form, {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }]}
+          >
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Nombre de la Empresa</Text>
+              <View style={styles.inputContainer}>
+                <Building2 size={20} color="#64748b" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mi Empresa S.A."
+                  placeholderTextColor="#94a3b8"
+                  value={companyName}
+                  onChangeText={setCompanyName}
+                  autoCorrect={false}
+                  editable={!isLoading}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Tu Nombre</Text>
+              <View style={styles.inputContainer}>
+                <User size={20} color="#64748b" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Juan Pérez"
+                  placeholderTextColor="#94a3b8"
+                  value={name}
+                  onChangeText={setName}
+                  autoCorrect={false}
+                  editable={!isLoading}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Correo Electrónico</Text>
+              <View style={styles.inputContainer}>
+                <Mail size={20} color="#64748b" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="tu@email.com"
+                  placeholderTextColor="#94a3b8"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isLoading}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Contraseña</Text>
+              <View style={styles.inputContainer}>
+                <Lock size={20} color="#64748b" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mínimo 6 caracteres"
+                  placeholderTextColor="#94a3b8"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  editable={!isLoading}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>Confirmar Contraseña</Text>
+              <View style={styles.inputContainer}>
+                <Lock size={20} color="#64748b" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Repite tu contraseña"
+                  placeholderTextColor="#94a3b8"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  editable={!isLoading}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.registerButton, isLoading && styles.registerButtonDisabled]}
+              onPress={handleRegister}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#2563eb', '#1d4ed8']}
+                style={styles.registerButtonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.registerButtonText}>Crear Cuenta</Text>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>o</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>¿Ya tienes cuenta?</Text>
+              <Link href="/login" asChild>
+                <TouchableOpacity disabled={isLoading}>
+                  <Text style={styles.loginLink}>Iniciar sesión</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </LinearGradient>
     </KeyboardAvoidingView>
   );
 }
@@ -227,48 +298,80 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F7',
+  },
+  gradient: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 32,
+    paddingHorizontal: Platform.OS === 'web' ? Math.min(width * 0.1, 60) : 24,
     paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 40,
   },
   iconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#E8F0FE',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: 'relative',
     marginBottom: 24,
   },
+  iconBackground: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#dbeafe',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  sparkleIcon: {
+    position: 'absolute',
+    top: -2,
+    right: 5,
+  },
   title: {
-    fontSize: 32,
-    fontWeight: '700' as const,
-    color: '#1C1C1E',
+    fontSize: 36,
+    fontWeight: '800' as const,
+    color: '#0f172a',
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#8E8E93',
+    fontSize: 17,
+    color: '#64748b',
   },
   form: {
     width: '100%',
+    maxWidth: 450,
+    alignSelf: 'center',
+  },
+  inputWrapper: {
+    marginBottom: 18,
+  },
+  inputLabel: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: '#334155',
+    marginBottom: 8,
+    marginLeft: 4,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   inputIcon: {
     marginRight: 12,
@@ -277,25 +380,22 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     paddingVertical: 16,
-    color: '#1C1C1E',
-  },
-  infoBox: {
-    backgroundColor: '#E8F0FE',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#2d4a7c',
-    lineHeight: 20,
+    color: '#0f172a',
   },
   registerButton: {
-    backgroundColor: '#2d4a7c',
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginTop: 12,
+    marginBottom: 20,
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  registerButtonGradient: {
     paddingVertical: 18,
-    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 24,
   },
   registerButtonDisabled: {
     opacity: 0.6,
@@ -305,6 +405,22 @@ const styles = StyleSheet.create({
     fontWeight: '700' as const,
     color: '#FFFFFF',
   },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e2e8f0',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: '#94a3b8',
+    fontWeight: '500' as const,
+  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -313,11 +429,11 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: '#64748b',
   },
   loginLink: {
     fontSize: 15,
-    fontWeight: '600' as const,
-    color: '#2d4a7c',
+    fontWeight: '700' as const,
+    color: '#2563eb',
   },
 });
